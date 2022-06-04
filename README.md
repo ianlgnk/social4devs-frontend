@@ -1,4 +1,4 @@
-# a
+# social4devs-frontend
 
 ## Project setup
 ```
