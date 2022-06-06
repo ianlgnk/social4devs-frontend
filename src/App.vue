@@ -1,30 +1,31 @@
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
-  </nav>
-  <router-view/>
+  <n-config-provider :theme="darkTheme">
+    <n-message-provider>
+      <router-view />
+    </n-message-provider>
+  </n-config-provider>
 </template>
 
+<script setup lang="ts">
+import { darkTheme } from 'naive-ui';
+import { useUser } from '@/components/UserProvider';
+import { onMounted, provide } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const userProvider = useUser();
+
+provide('userProvider', userProvider);
+
+onMounted(() => {
+  if (userProvider.isTokenDefined) router.push('/feed');
+});
+</script>
+
 <style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+* {
+  margin: 0;
+  padding: 0;
+  outline: none;
 }
 </style>
