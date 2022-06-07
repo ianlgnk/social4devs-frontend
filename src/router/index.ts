@@ -1,24 +1,24 @@
-import FeedViewVue from '@/views/FeedView.vue';
-import HomeViewVue from '@/views/HomeView.vue';
-import RegisterViewVue from '@/views/RegisterView.vue';
+import MainView from '@/views/MainView.vue';
+import HomeView from '@/views/HomeView.vue';
+import RegisterView from '@/views/RegisterView.vue';
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'home',
-    component: HomeViewVue,
+    component: HomeView,
     props: true,
   },
   {
     path: '/register',
     name: 'register',
-    component: RegisterViewVue,
+    component: RegisterView,
   },
   {
-    path: '/feed',
-    name: 'feed',
-    component: FeedViewVue,
+    path: '/main',
+    name: 'main',
+    component: MainView,
   },
 ];
 

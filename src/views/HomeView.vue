@@ -117,7 +117,7 @@ async function logIn() {
   isFetching.value = true;
   const isLoginSuccessful = await userProvider?.logIn(model.value);
 
-  if (isLoginSuccessful) router.push('/feed');
+  if (isLoginSuccessful) router.push('/main');
   else message.error('Email e/ou senha inválido(s)!');
 
   setTimeout(() => {

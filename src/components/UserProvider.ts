@@ -1,8 +1,9 @@
 import { reactive, ref, computed } from 'vue';
 import {
-  IUser, IUserProvider, ILogIn, ICreateReturn,
+  IUser, IUserProvider, ILogIn, ICreateReturn, IPost, IComment,
 } from '@/interfaces/interfaces';
-import { api } from '@/services/api';
+import axios from 'axios';
+
 // eslint-disable-next-line camelcase
 import jwt_decode from 'jwt-decode';
 
@@ -17,24 +18,27 @@ export function useUser(): IUserProvider {
     githubAccount: '',
     specialties: [],
   });
-  const userToken = ref<string | null>(localStorage.getItem('token'));
-  const isTokenDefined = computed(() => userToken.value !== null);
+  const userToken = ref('');
+  const isTokenDefined = computed(() => (localStorage.getItem('token') !== '' && localStorage.getItem('token') !== null));
+
+  const api = axios.create({
+    baseURL: 'http://localhost:3333/',
+  });
 
   function setUser(newUser: IUser) {
     Object.assign(user, newUser);
   }
 
-  function setToken(token: string) {
-    userToken.value = token;
+  function setToken(token: string | null) {
+    if (token === null) return;
     const decodedToken: IUser = jwt_decode(token);
-    api.defaults.headers.common.Authorization = userToken.value;
-    // localStorage.setItem('token', userToken.value);
+    userToken.value = token;
+    localStorage.setItem('token', token);
     setUser(decodedToken);
   }
 
   function removeToken() {
     userToken.value = '';
-    api.defaults.headers.common.Authorization = '';
     localStorage.removeItem('token');
     setUser({
       email: '',
@@ -72,8 +76,94 @@ export function useUser(): IUserProvider {
       }));
   }
 
+  async function createPost(data: string): Promise<boolean> {
+    return api.post('/post', { body: data }, {
+      headers: {
+        token: userToken.value,
+      },
+    }).then(() => true).catch(() => false);
+  }
+
+  async function fetchPosts():Promise<Array<IPost>> {
+    return api.get('/post', {
+      headers: {
+        token: userToken.value,
+      },
+    }).then((res) => res.data).catch(() => []);
+  }
+
+  async function createComment(data: string, postBody: string): Promise<IComment | boolean> {
+    return api.post('/post/commentary', {
+      postEmail: user.email,
+      postBody,
+      commentary: data,
+    }, {
+      headers: {
+        token: userToken.value,
+      },
+    }).then((res) => res.data)
+      .catch(() => false);
+  }
+
+  async function listComments(postEmail: string, postBody: string): Promise<Array<IComment>> {
+    return api.get(
+      '/post/commentary',
+      {
+        headers: {
+          token: userToken.value,
+        },
+        params: {
+          postEmail,
+          postBody,
+        },
+      },
+    ).then((res) => res.data)
+      .catch(() => []);
+  }
+
+  async function createLike(postBody: string) {
+    return api.post('/post/like', {
+      postEmail: user.email,
+      postBody,
+    }, {
+      headers: {
+        token: userToken.value,
+      },
+    });
+  }
+
+  async function deleteLike(postBody: string) {
+    return api.delete('/post/like', {
+      headers: {
+        token: userToken.value,
+      },
+      data: {
+        postEmail: user.email,
+        postBody,
+      },
+    });
+  }
+
+  async function searchUser(valueToFind: string): Promise<Array<IUser>> {
+    return api.get('/user/search', {
+      headers: {
+        token: userToken.value,
+        name: valueToFind,
+        nickname: valueToFind,
+      },
+    }).then((res) => res.data);
+  }
+
+  async function searchUserByEmail(email: string): Promise<IUser> {
+    return api.get('/user/search', {
+      headers: {
+        token: userToken.value,
+      },
+    }).then((res) => res.data);
+  }
+
   // init
-  if (isTokenDefined.value) setToken(userToken.value || '');
+  setToken(localStorage.getItem('token'));
 
   return {
     user,
@@ -81,5 +171,13 @@ export function useUser(): IUserProvider {
     logIn,
     logOut,
     create,
+    createPost,
+    fetchPosts,
+    createComment,
+    createLike,
+    deleteLike,
+    listComments,
+    searchUser,
+    searchUserByEmail,
   };
 }
