@@ -1,23 +1,41 @@
 <template>
     <n-card
         content-style="padding: 10px 15px 10px 15px"
-        style="width: calc(100vw - 31px)"
+        :style="(!props.isInsideModal)
+            ? 'width: calc(100vw - 31px)'
+            : 'width: calc(100vw - 120px)'
+        "
     >
         <n-grid>
             <n-gi :span="24">
-                <n-space align="center" style="max-height: 100%">
-                    <n-avatar
-                        round
-                        :size="48"
-                        :src="require('@/assets/avatar_default.jpg')"
-                    />
-                    <div>
-                        {{ props.post.name }}
-                        <br />
-                        <n-button text type="info" @click="onClickNickname">
-                            @{{ props.post.nickname }}
-                        </n-button>
-                    </div>
+                <n-space justify="space-between">
+                    <n-space align="center" style="max-height: 100%">
+                        <n-avatar
+                            round
+                            :size="48"
+                            :src="require('@/assets/avatar_default.jpg')"
+                        />
+                        <div>
+                            {{ props.post.name }}
+                            <br />
+                            <n-button text type="info" @click="onClickNickname">
+                                @{{ props.post.nickname }}
+                            </n-button>
+                        </div>
+                    </n-space>
+                    <n-popconfirm
+                        v-if="(isUserPostOwner)"
+                        @positive-click="onClickTrash"
+                        positive-text="Confirmar"
+                        negative-text="Cancelar"
+                    >
+                        <template #trigger>
+                            <n-button type="error" text>
+                                <n-icon :component="TrashCan" />
+                            </n-button>
+                        </template>
+                        Deseja excluir seu post?
+                    </n-popconfirm>
                 </n-space>
             </n-gi>
             <n-gi :span="24">
@@ -73,14 +91,17 @@
 import IosHeart from '@vicons/ionicons4/IosHeart';
 import IosHeartDislike from '@vicons/ionicons4/IosHeartDislike';
 import Messages from '@vicons/tabler/Messages';
+import TrashCan from '@vicons/carbon/TrashCan';
 import {
-  ref, PropType, inject, defineProps,
+  ref, PropType, inject, defineProps, computed, defineEmits,
 } from 'vue';
 import { IPost, IUserProvider } from '@/interfaces/interfaces';
+import { useMessage } from 'naive-ui';
 import CommentsModal from './CommentsModal.vue';
 import ProfileModal from './ProfileModal.vue';
 
 const userProvider:IUserProvider | undefined = inject('userProvider');
+const message = useMessage();
 
 const componentCommentsModal = ref<InstanceType<typeof CommentsModal> | null>(null);
 const componentProfileModal = ref<InstanceType<typeof ProfileModal> | null>(null);
@@ -88,6 +109,20 @@ const props = defineProps({
   post: {
     type: Object as PropType<IPost>,
     required: true,
+  },
+  isInsideModal: {
+    type: Boolean,
+    required: false,
+    default: () => false,
+  },
+});
+const isUserPostOwner = computed(() => {
+  if (props.post.email === userProvider?.user.email) return true;
+  return false;
+});
+const emit = defineEmits({
+  onDeletePost() {
+    return true;
   },
 });
 
@@ -98,11 +133,11 @@ function onClickNickname() {
 /* eslint-disable no-param-reassign */
 async function onClickLike(post: IPost) {
   if (post.liked === '0') {
-    await userProvider?.createLike(post.content);
+    await userProvider?.createLike(post.content, post.email);
     post.liked = '1';
     post.totalLikes = String(Number(post.totalLikes) + 1);
   } else {
-    await userProvider?.deleteLike(post.content);
+    await userProvider?.deleteLike(post.content, post.email);
     post.liked = '0';
     post.totalLikes = String(Number(post.totalLikes) - 1);
   }
@@ -117,4 +152,24 @@ function formatDate(data: string) {
   const options = { day: 'numeric', month: 'long', year: 'numeric' };
   return dataAsDate.toLocaleDateString('pt-Br', options);
 }
+
+async function onClickTrash() {
+  const res = await userProvider?.deletePost(props.post.content);
+
+  if (res) message.success('Post excluído com sucesso.');
+  else message.error('Não foi possível apagar o post.');
+
+  emit('onDeletePost');
+}
 </script>
+
+<style scoped>
+.feed-item {
+    width: calc(100vw - 31px);
+}
+
+.modal-feed-item {
+    width: 100px;
+}
+
+</style>

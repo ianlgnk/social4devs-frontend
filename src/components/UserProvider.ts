@@ -17,13 +17,23 @@ export function useUser(): IUserProvider {
     password: '',
     githubAccount: '',
     specialties: [],
+    followers: [],
+    follows: [],
   });
   const userToken = ref('');
-  const isTokenDefined = computed(() => (localStorage.getItem('token') !== '' && localStorage.getItem('token') !== null));
 
   const api = axios.create({
     baseURL: 'http://localhost:3333/',
+    // baseURL: 'https://social4devs.herokuapp.com',
   });
+
+  function setUserAfterEdit(res: any) {
+    user.bio = res.data.bio;
+    user.email = res.data.email;
+    user.githubAccount = res.data.githubaccount;
+    user.name = res.data.name;
+    user.nickname = res.data.nickname;
+  }
 
   function setUser(newUser: IUser) {
     Object.assign(user, newUser);
@@ -33,13 +43,11 @@ export function useUser(): IUserProvider {
     if (token === null) return;
     const decodedToken: IUser = jwt_decode(token);
     userToken.value = token;
-    localStorage.setItem('token', token);
     setUser(decodedToken);
   }
 
   function removeToken() {
     userToken.value = '';
-    localStorage.removeItem('token');
     setUser({
       email: '',
       name: '',
@@ -48,6 +56,8 @@ export function useUser(): IUserProvider {
       password: '',
       githubAccount: '',
       specialties: [],
+      followers: [],
+      follows: [],
     });
   }
 
@@ -76,10 +86,45 @@ export function useUser(): IUserProvider {
       }));
   }
 
+  async function editUser(data: IUser): Promise<ICreateReturn> {
+    return api.put('/user', {
+      name: data.name,
+      bio: data.bio,
+      nickname: data.nickname,
+      password: data.password,
+    }, {
+      headers: {
+        token: userToken.value,
+      },
+    })
+      .then((res) => {
+        setUserAfterEdit(res);
+        return {
+          isSuccessful: true as boolean,
+          feedbackMsg: '' as string,
+        };
+      })
+      .catch((res) => ({
+        isSuccessful: false as boolean,
+        feedbackMsg: res.response.data.message as string,
+      }));
+  }
+
   async function createPost(data: string): Promise<boolean> {
     return api.post('/post', { body: data }, {
       headers: {
         token: userToken.value,
+      },
+    }).then(() => true).catch(() => false);
+  }
+
+  async function deletePost(postBody: string): Promise<boolean> {
+    return api.delete('/post', {
+      headers: {
+        token: userToken.value,
+      },
+      data: {
+        body: postBody,
       },
     }).then(() => true).catch(() => false);
   }
@@ -92,9 +137,13 @@ export function useUser(): IUserProvider {
     }).then((res) => res.data).catch(() => []);
   }
 
-  async function createComment(data: string, postBody: string): Promise<IComment | boolean> {
+  async function createComment(
+    data: string,
+    postBody: string,
+    postEmail: string,
+  ): Promise<IComment | boolean> {
     return api.post('/post/commentary', {
-      postEmail: user.email,
+      postEmail,
       postBody,
       commentary: data,
     }, {
@@ -103,6 +152,23 @@ export function useUser(): IUserProvider {
       },
     }).then((res) => res.data)
       .catch(() => false);
+  }
+
+  async function deleteComment(
+    postEmail: string,
+    postBody:string,
+    commentary: string,
+  ): Promise<boolean> {
+    return api.delete('/post/commentary', {
+      headers: {
+        token: userToken.value,
+      },
+      data: {
+        postEmail,
+        postBody,
+        commentary,
+      },
+    }).then(() => true).catch(() => false);
   }
 
   async function listComments(postEmail: string, postBody: string): Promise<Array<IComment>> {
@@ -121,9 +187,9 @@ export function useUser(): IUserProvider {
       .catch(() => []);
   }
 
-  async function createLike(postBody: string) {
+  async function createLike(postBody: string, postEmail: string) {
     return api.post('/post/like', {
-      postEmail: user.email,
+      postEmail,
       postBody,
     }, {
       headers: {
@@ -132,13 +198,13 @@ export function useUser(): IUserProvider {
     });
   }
 
-  async function deleteLike(postBody: string) {
+  async function deleteLike(postBody: string, postEmail: string) {
     return api.delete('/post/like', {
       headers: {
         token: userToken.value,
       },
       data: {
-        postEmail: user.email,
+        postEmail,
         postBody,
       },
     });
@@ -154,20 +220,56 @@ export function useUser(): IUserProvider {
     }).then((res) => res.data);
   }
 
-  async function searchUserByEmail(email: string): Promise<IUser> {
-    return api.get('/user/search', {
+  async function searchUserByEmail(email: string): Promise<any> {
+    return api.get('/user/profile', {
+      headers: {
+        token: userToken.value,
+        email,
+      },
+    }).then((res) => res.data);
+  }
+
+  async function followUser(emailUserFollowed: string) {
+    return api.post('/user/follow', {
+      emailUserFollowed,
+    }, {
+      headers: {
+        token: userToken.value,
+      },
+    });
+  }
+
+  async function unfollowUser(emailUserUnfollowed: string) {
+    return api.delete('/user/follow', {
+      headers: {
+        token: userToken.value,
+      },
+      data: {
+        emailUserUnfollowed,
+      },
+    });
+  }
+
+  async function listPostsByUser(email: string): Promise<Array<IPost>> {
+    return api.get(`post/user/${email}`, {
       headers: {
         token: userToken.value,
       },
     }).then((res) => res.data);
   }
 
-  // init
-  setToken(localStorage.getItem('token'));
+  async function deleteUser() {
+    return api.delete('/user', {
+      headers: {
+        token: userToken.value,
+      },
+    }).then(() => {
+      logOut();
+    });
+  }
 
   return {
     user,
-    isTokenDefined: isTokenDefined.value,
     logIn,
     logOut,
     create,
@@ -179,5 +281,12 @@ export function useUser(): IUserProvider {
     listComments,
     searchUser,
     searchUserByEmail,
+    followUser,
+    unfollowUser,
+    listPostsByUser,
+    deleteUser,
+    editUser,
+    deleteComment,
+    deletePost,
   };
 }

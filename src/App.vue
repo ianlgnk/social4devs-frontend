@@ -12,11 +12,9 @@
 import { darkTheme } from 'naive-ui';
 import { useUser } from '@/components/UserProvider';
 import {
-  onMounted, provide, ref, computed,
+  provide, ref, computed,
 } from 'vue';
-import { useRouter } from 'vue-router';
 
-const router = useRouter();
 const userProvider = useUser();
 
 const isDarkTheme = ref(true);
@@ -29,10 +27,6 @@ function switchTheme() {
 
 provide('userProvider', userProvider);
 provide('switchTheme', switchTheme);
-
-onMounted(() => {
-  if (userProvider.isTokenDefined) router.push('/main');
-});
 </script>
 
 <style lang="scss">

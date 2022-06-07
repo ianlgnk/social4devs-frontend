@@ -59,7 +59,11 @@ async function open(postArg: IPost) {
 }
 
 async function onClickAddComment() {
-  const res = await userProvider?.createComment(comment.value, post.value.content);
+  const res = await userProvider?.createComment(
+    comment.value,
+    post.value.content,
+    post.value.email,
+  );
 
   if (res === false) message.error('Houve algum erro ao adicionar seu comentário.');
   else {

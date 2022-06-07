@@ -12,6 +12,8 @@ interface IUser {
     // avatar: ?
     githubAccount: string,
     specialties: Array<string>,
+    followers: Array<IUser>,
+    follows: Array<IUser>,
 }
 
 interface ICreateReturn {
@@ -45,18 +47,24 @@ interface IPost {
 
 interface IUserProvider {
     user: IUser,
-    isTokenDefined: boolean,
     logIn(data: ILogIn): Promise<boolean>,
     logOut(): void,
     create(data: IUser): Promise<ICreateReturn>,
     createPost(data: string): Promise<boolean>,
     fetchPosts(): Promise<Array<IPost>>,
-    createComment(data: string, postBody: string): Promise<IComment | boolean>,
-    createLike(postBody: string): void,
-    deleteLike(postBody: string): void,
+    createComment(data: string, postBody: string, postEmail: string): Promise<IComment | boolean>,
+    createLike(postBody: string, postEmail: string): void,
+    deleteLike(postBody: string, postEmail: string): void,
     listComments(postEmail: string, postBody: string): Promise<Array<IComment>>,
+    listPostsByUser(email: string): Promise<Array<IPost>>,
     searchUser(valueToFind: string): Promise<Array<IUser>>,
-    searchUserByEmail(email: string): Promise<IUser>,
+    searchUserByEmail(email: string): Promise<any>,
+    followUser(emailUserFollowed: string): void,
+    unfollowUser(emailUserFollowed: string): void,
+    deleteUser(): void,
+    editUser(data: IUser): Promise<ICreateReturn>,
+    deleteComment(postEmail: string, postBody:string, commentary: string): Promise<boolean>,
+    deletePost(postBody: string): Promise<boolean>,
 }
 
 export {

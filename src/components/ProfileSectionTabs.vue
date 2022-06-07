@@ -7,39 +7,39 @@
         animated
         :on-update:value="onTabClick"
     >
-        <n-tab-pane name="Feed">
+        <n-tab-pane name="Info">
+            <template #tab>
+                <n-popover trigger="hover">
+                    <template #trigger>
+                        <n-icon :component="Identification" size="22" />
+                    </template>
+                    Informações
+                </n-popover>
+            </template>
+            <ProfileInfo />
+        </n-tab-pane>
+        <n-tab-pane name="Postagens">
             <template #tab>
                 <n-popover trigger="hover">
                     <template #trigger>
                         <n-icon :component="ReadingList28Regular" size="22" />
                     </template>
-                    Feed
+                    Postagens
                 </n-popover>
             </template>
-            <FeedTab />
-        </n-tab-pane>
-        <n-tab-pane name="Menu">
-            <template #tab>
-                <n-popover trigger="hover">
-                    <template #trigger>
-                        <n-icon :component="Apps" size="16" />
-                    </template>
-                    Menu
-                </n-popover>
-            </template>
-            <MenuTab />
+            <FeedTab isInsideModal />
         </n-tab-pane>
     </n-tabs>
 </template>
 
 <script setup lang="ts">
 import ReadingList28Regular from '@vicons/fluent/ReadingList28Regular';
-import Apps from '@vicons/carbon/Apps';
+import Identification from '@vicons/carbon/Identification';
 import FeedTab from '@/components/FeedTab.vue';
-import MenuTab from '@/components/MenuTab.vue';
 import { ref } from 'vue';
+import ProfileInfo from './ProfileInfo.vue';
 
-const tabValue = ref<string | number>('Feed');
+const tabValue = ref<string | number>('Info');
 
 function onTabClick(value: string | number) {
   tabValue.value = value;

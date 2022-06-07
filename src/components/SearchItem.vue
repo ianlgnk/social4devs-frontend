@@ -33,7 +33,7 @@ const props = defineProps({
 const componentProfileModal = ref<InstanceType<typeof ProfileModal> | null>(null);
 
 function onClickNickname() {
-  componentProfileModal.value?.open();
+  componentProfileModal.value?.open(props.user.email);
 }
 </script>
 
